@@ -113,28 +113,38 @@ def grab_preview(voices_data, selected_voice_name):
 def fetch_voices(api_key):
     url = "https://api.elevenlabs.io/v1/voices"
     headers = {"xi-api-key": api_key}
-    response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        data = response.json()
-        voices_data = data['voices']
-        return voices_data
-    else:
-        print("Error fetching voices")
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            voices_data = data['voices']
+            return voices_data
+        else:
+            print("Error fetching voices")
+            return []
+    except requests.RequestException:
+        print("Unable to connect to ElevenLabs API. Please check your internet connection.")
         return []
 
 
 def update_quota(api_key, right_button):
     url = "https://api.elevenlabs.io/v1/user"
     headers = {"xi-api-key": api_key}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        data = response.json()
-        quota_used = data['subscription']['character_count']
-        quota_total = data['subscription']['character_limit']
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            quota_used = data['subscription']['character_count']
+            quota_total = data['subscription']['character_limit']
 
-        right_button.configure(
-            text=f"total quota used: {quota_used} / {quota_total}")
+            right_button.configure(
+                text=f"total quota used: {quota_used} / {quota_total}")
+        else:
+            print("Error updating quota.")
+    except requests.exceptions.ConnectionError:
+        print("Unable to connect to ElevenLabs API. Please check your internet connection.")
+
 
 
 # Declare a dictionary for caching audio files
@@ -375,18 +385,20 @@ def stop_audio(self):
     self.play_button_check()
     update_play_status(self)
 
-
 def stop_and_unload_audio(self):
     if hasattr(sd, '_stream') and sd.get_stream().active:
         sd.stop()
+        time.sleep(1)  # Give it a second to fully stop
         sd.close()
     # Remove the temporary audio file if it exists
     if self.temp_audio_file_name:
-        os.remove(self.temp_audio_file_name)
-        self.temp_audio_file_name = None
+        try:
+            os.remove(self.temp_audio_file_name)
+            self.temp_audio_file_name = None
+        except PermissionError:
+            print(f"Unable to delete file: {self.temp_audio_file_name}. It might still be in use.")
     self.audio_curr_pos.configure(text="0:00")
-    self.audio_end_pos.configure(text=convert(
-        self.audio_length))  # Resetting the GUI
+    self.audio_end_pos.configure(text=convert(self.audio_length))  # Resetting the GUI
     self.audio_pos_slider.set(0)  # Resetting the GUI
     self.new_audio_position = 0
     self.status.set("Stopped")
