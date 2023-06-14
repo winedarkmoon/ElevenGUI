@@ -12,6 +12,10 @@ With ElevenGUI, you can:
 
 ## Installation
 
+
+https://github.com/winedarkmoon/ElevenGUI/assets/127571479/266635fd-6b31-4dc7-a3c6-b829d540c4d1
+
+
 Ensure you have Python 3.9 or higher installed. Creating a Python virtual environment before the installation is recommended.
 
 To install the application, first clone the repository:
